@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本機端影音與圖片合成工具 v2.7</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    input[type=range] {
+      accent-color: #4f46e5;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
+          <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-bold text-slate-900 text-lg leading-tight">影音圖片合成工作台</h1>
+            <span class="px-1.5 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded text-[10px] font-mono font-bold shadow-2xs">v2.7 毫秒精準版</span>
+          </div>
+          <p class="text-xs text-slate-500">100% 瀏覽器本地運算・自適應時間軸解析・純文字快照還原・PCM 雙軌混音</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+          無伺服器安全架構
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <div class="lg:col-span-7 space-y-6">
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center space-x-2.5 mb-4 pb-2 border-b border-slate-100">
+            <span class="w-7 h-7 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center text-sm font-bold">1</span>
+            <h2 class="text-base font-bold text-slate-800">主畫面與聲音來源</h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                主畫面來源 (影片 / 圖片)
+              </label>
+              <div id="mainDropZone" class="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/60 flex flex-col items-center justify-center min-h-[220px] relative group">
+                <input type="file" id="mainFileInput" accept="video/*,image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                <div id="mainEmptyState" class="space-y-2 pointer-events-none">
+                  <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mx-auto text-slate-400 group-hover:text-brand-600 transition-colors">
+                    <i class="fa-solid fa-photo-film text-lg"></i>
+                  </div>
+                  <div class="text-xs text-slate-600 font-medium">點擊或拖放影片/圖片</div>
+                  <p class="text-[11px] text-slate-400">MP4, WebM, MOV, JPG, PNG 等</p>
+                </div>
+                <div id="mainSelectedInfo" class="hidden text-left w-full space-y-1.5 z-0 pointer-events-none">
+                  <div class="flex items-center space-x-2">
+                    <span id="mainTypeBadge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-100 text-brand-700">影片</span>
+                    <span id="mainFileName" class="text-xs font-semibold text-slate-800 truncate block max-w-[150px]"></span>
+                  </div>
+                  <div id="mainMediaMeta" class="text-[11px] text-slate-500 font-mono">解析度: -- | 時長: --</div>
+                  <div id="mediaSecurityNote" class="text-[10px] text-emerald-600 flex items-center">
+                    <i class="fa-solid fa-circle-check mr-1"></i> 已啟用全圖完整投射渲染
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex items-start justify-between">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 pt-0.5">
+                  新聲音來源 (音訊 / 影片音軌)
+                </label>
+                <div class="text-right flex flex-col items-end">
+                  <span class="text-[11px] text-brand-600 font-bold flex items-center space-x-1">
+                    <i class="fa-solid fa-cloud-arrow-down text-[10px]"></i>
+                    <span>無音檔？下載推薦：</span>
+                  </span>
+                  <div class="flex items-center space-x-1.5 mt-1">
+                    <a href="https://yt5s.biz/" target="_blank" rel="noopener noreferrer" class="px-2.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-[10px] font-bold border border-blue-200 transition-colors flex items-center space-x-1 shadow-2xs">
+                      <i class="fa-solid fa-bolt text-[9px]"></i>
+                      <span>1. yt5s.biz (首選)</span>
+                    </a>
+                    <a href="https://ytmp3.nu/" target="_blank" rel="noopener noreferrer" class="px-2.5 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 rounded text-[10px] font-bold border border-red-200 transition-colors flex items-center space-x-1 shadow-2xs">
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                      <span>2. YTmp3 (備用)</span>
+                    </a>
+                  </div>
+                  <span class="text-[9px] text-slate-400 font-normal mt-0.5">（點選前往並輸入 YouTube 網址）</span>
+                </div>
+              </div>
+
+              <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/70 space-y-2.5 min-h-[220px] flex flex-col justify-between">
+                
+                <div id="audioDropZone" class="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-lg p-3 text-center cursor-pointer transition-colors bg-white flex flex-col items-center justify-center relative group flex-1 min-h-[85px]">
+                  <input type="file" id="audioFileInput" accept="audio/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                  <div id="audioEmptyState" class="flex items-center space-x-2.5 pointer-events-none py-1">
+                    <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+                      <i class="fa-solid fa-music text-sm"></i>
+                    </div>
+                    <div class="text-left">
+                      <div class="text-xs text-slate-800 font-bold">點擊或拖放音源檔案</div>
+                      <p class="text-[10px] text-slate-400">支援 MP3, WAV, M4A 或影片檔 (MP4 抽音軌)</p>
+                    </div>
+                  </div>
+                  <div id="audioSelectedInfo" class="hidden text-left w-full space-y-1 z-0 pointer-events-none">
+                    <div class="flex items-center space-x-2">
+                      <span id="audioTypeBadge" class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-purple-100 text-purple-700">音訊</span>
+                      <span id="audioFileName" class="text-xs font-semibold text-slate-800 truncate block max-w-[170px]"></span>
+                    </div>
+                    <div id="audioMediaMeta" class="text-[10px] text-slate-500 font-mono">原始時長: --</div>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5 bg-white p-2 rounded-lg border border-slate-200">
+                  <div class="flex items-center justify-between text-[10px] font-semibold text-slate-600">
+                    <span>音軌區間設定 (預設全時長)</span>
+                    <span id="audioRangeDuration" class="font-mono text-brand-600 font-bold">區間: 00:00.0</span>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="flex items-center space-x-1 font-mono text-xs bg-slate-50 p-1 rounded border border-slate-200">
+                      <span class="text-[10px] text-slate-400">起:</span>
+                      <input type="number" id="audioStartMin" min="0" max="180" value="0" placeholder="00" class="w-8 text-center border-none bg-transparent p-0 focus:outline-none">
+                      <span class="text-slate-400 font-bold">:</span>
+                      <input type="number" id="audioStartSec" min="0" max="59" value="0" placeholder="00" class="w-8 text-center border-none bg-transparent p-0 focus:outline-none">
+                    </div>
+                    <div class="flex items-center space-x-1 font-mono text-xs bg-slate-50 p-1 rounded border border-slate-200">
+                      <span class="text-[10px] text-slate-400">訖:</span>
+                      <input type="number" id="audioEndMin" min="0" max="180" value="0" placeholder="00" class="w-8 text-center border-none bg-transparent p-0 focus:outline-none">
+                      <span class="text-slate-400 font-bold">:</span>
+                      <input type="number" id="audioEndSec" min="0" max="59" value="0" placeholder="00" class="w-8 text-center border-none bg-transparent p-0 focus:outline-none">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-[10px]">
+                    <span id="audioStatusText" class="text-slate-400">請載入檔案以啟動音軌診斷</span>
+                    <button id="testAudioBtn" type="button" class="hidden px-2.5 py-0.5 rounded bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold border border-brand-200 transition-colors">
+                      <i class="fa-solid fa-volume-high mr-0.5"></i> 試聽區間
+                    </button>
+                  </div>
+                  <canvas id="waveformCanvas" class="w-full h-2.5 bg-slate-200/60 rounded overflow-hidden"></canvas>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-7 h-7 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center text-sm font-bold">2</span>
+              <h2 class="text-base font-bold text-slate-800">智慧字幕壓印 (AI 聽寫 / SRT 純文字)</h2>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[11px] text-slate-400">啟用字幕</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="subtitleToggle" checked class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+              </label>
+            </div>
+          </div>
+
+          <div id="subtitleControlsBody" class="space-y-4">
+            
+            <div class="p-3.5 bg-gradient-to-r from-purple-50 via-indigo-50 to-brand-50 rounded-xl border border-indigo-200/80 space-y-3 shadow-2xs">
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <span class="text-xs font-bold text-indigo-950 flex items-center space-x-1.5">
+                  <i class="fa-solid fa-robot text-brand-600"></i>
+                  <span>Gemini AI 自動語音聽寫 (載入影片後點擊辨識)</span>
+                </span>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] text-brand-600 hover:text-brand-700 font-semibold underline">
+                  免費取得 Gemini API Key
+                </a>
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div class="relative flex-1">
+                  <input type="password" id="geminiApiKeyInput" placeholder="請在此貼上您的 Gemini API Key (將安全保存在本機)" class="w-full pl-8 pr-8 py-1.5 text-xs bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none font-mono">
+                  <i class="fa-solid fa-key text-[10px] text-indigo-400 absolute left-2.5 top-2.5"></i>
+                  <button id="toggleKeyVisibility" type="button" class="text-slate-400 hover:text-slate-600 absolute right-2.5 top-2">
+                    <i class="fa-solid fa-eye text-xs"></i>
+                  </button>
+                </div>
+                
+                <button id="triggerAiTranscriptionBtn" type="button" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                  <i class="fa-solid fa-bolt text-[10px]"></i>
+                  <span>立即 AI 聽寫主影片</span>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between text-[10px] text-indigo-700/80">
+                <span class="text-slate-500">上傳主影片後，點擊「立即 AI 聽寫」即可產出精準繁中字幕</span>
+                <span id="aiTranscribeStatus" class="font-medium text-slate-500">API 就緒中</span>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <label class="block text-xs font-semibold text-slate-600">
+                  字幕純文字內容 (可直接在此修改文字或時間軸)
+                </label>
+                <div class="flex items-center space-x-2">
+                  <input type="file" id="srtFileInput" accept=".srt,.txt" class="hidden">
+                  <button id="uploadSrtBtn" type="button" class="text-[11px] text-brand-600 hover:text-brand-700 font-bold flex items-center space-x-1 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                    <i class="fa-solid fa-file-arrow-up text-[10px]"></i>
+                    <span>匯入 .srt 檔</span>
+                  </button>
+                  
+                  <button id="restoreAiSrtBtn" type="button" class="hidden text-[11px] text-purple-700 hover:text-purple-800 font-bold flex items-center space-x-1 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 transition-colors shadow-2xs" title="改到混亂時，一鍵恢復為 AI 剛辨識完成的初始文字檔">
+                    <i class="fa-solid fa-arrow-rotate-left text-[10px]"></i>
+                    <span>還原 AI 原始檔</span>
+                  </button>
+
+                  <button id="clearSrtBtn" type="button" class="text-[11px] text-slate-400 hover:text-rose-600">
+                    清空
+                  </button>
+                </div>
+              </div>
+
+              <textarea id="subtitleInput" rows="6" placeholder="AI 聽寫完成後會自動在此填入標準 SRT 字幕；您可直接在此修改文字或時間。亦支援拖入 .srt 檔案，或直接貼上一行一行的純文案（系統自動均分時間軸）。" class="w-full text-xs p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-mono custom-scrollbar leading-relaxed"></textarea>
+              
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span id="subtitleCountText">已解析: 0 句字幕</span>
+                <span class="text-emerald-600"><i class="fa-solid fa-shield-check mr-1"></i>毫秒自適應對齊引擎 (解決時間膨脹與漏判)</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-[11px] font-semibold text-slate-600">
+                  <span>字體大小</span>
+                  <span id="subFontSizeLabel" class="font-mono text-brand-600">28px</span>
+                </div>
+                <input type="range" id="subFontSizeSlider" min="16" max="60" value="28" class="w-full h-1.5 bg-slate-200 rounded appearance-none cursor-pointer">
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[11px] font-semibold text-slate-600">顯示位置</label>
+                <select id="subPositionSelect" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-1.5 focus:outline-none">
+                  <option value="bottom" selected>底部居中 (預設)</option>
+                  <option value="center">畫面正中央</option>
+                  <option value="top">頂部居中</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[11px] font-semibold text-slate-600">文字配色樣式</label>
+                <select id="subColorSelect" class="w-full text-xs bg-white border border-slate-300 rounded-lg p-1.5 focus:outline-none">
+                  <option value="#ffffff" selected>白字 + 經典黑描邊</option>
+                  <option value="#facc15">黃字 + 經典黑描邊</option>
+                  <option value="#38bdf8">天藍字 + 經典黑描邊</option>
+                  <option value="#000000">黑字 + 經典白描邊</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-7 h-7 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center text-sm font-bold">3</span>
+              <h2 class="text-base font-bold text-slate-800">混音與音訊控制</h2>
+            </div>
+            <div class="flex items-center space-x-1.5 text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+              <i class="fa-solid fa-arrows-rotate text-[11px] text-brand-600"></i>
+              <span>PCM 雙軌數位混音</span>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div id="mainAudioGroup" class="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-video text-slate-500 text-sm"></i>
+                  <span class="text-xs font-semibold text-slate-700">主畫面原聲音軌 (PCM 記憶體)</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-[11px] text-slate-400">啟用原聲</span>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="mainAudioToggle" checked class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3 pt-1">
+                <div class="w-5 text-center text-slate-400">
+                  <i class="fa-solid fa-volume-low text-xs"></i>
+                </div>
+                <input type="range" id="mainVolumeSlider" min="0" max="200" value="100" class="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                <div class="w-14 text-right">
+                  <span id="mainVolumeLabel" class="text-xs font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-xs">100%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-music text-brand-600 text-sm"></i>
+                  <span class="text-xs font-semibold text-slate-700">新聲音音軌</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-[10px] font-medium bg-brand-50 text-brand-700 px-2 py-0.5 rounded border border-brand-200/60">
+                    獨立音軌
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3 pt-1">
+                <div class="w-5 text-center text-slate-400">
+                  <i class="fa-solid fa-volume-high text-xs"></i>
+                </div>
+                <input type="range" id="audioVolumeSlider" min="0" max="200" value="100" class="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                <div class="w-14 text-right">
+                  <span id="audioVolumeLabel" class="text-xs font-mono font-bold text-brand-600 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-xs">100%</span>
+                </div>
+              </div>
+
+              <div class="pt-2.5 mt-2 border-t border-slate-200/60 flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center space-x-1.5">
+                  <label for="audioOffsetInput" class="text-xs font-medium text-slate-600">起始播放偏移 (秒):</label>
+                  <span class="text-[10px] text-slate-400" title="正值延後播放，負值提前開始">（延遲/提前）</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input type="number" id="audioOffsetInput" value="0.0" step="0.1" class="w-20 px-2 py-1 text-xs border border-slate-300 rounded-lg text-center font-mono focus:ring-1 focus:ring-brand-500 focus:outline-none bg-white">
+                  <span class="text-xs text-slate-500">秒</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm transition-all hover:shadow-md">
+          <div class="flex items-center space-x-2.5 mb-4 pb-2 border-b border-slate-100">
+            <span class="w-7 h-7 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center text-sm font-bold">4</span>
+            <h2 class="text-base font-bold text-slate-800">輸出時長與畫質比例</h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-slate-600">時長設定模式</label>
+              <select id="durationModeSelect" class="w-full text-xs font-medium bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <option value="main">跟隨主畫面長度 (預設)</option>
+                <option value="audio">跟隨新聲音長度</option>
+                <option value="custom">自訂固定秒數</option>
+              </select>
+              <div id="customDurationBox" class="hidden mt-2 flex items-center space-x-2">
+                <input type="number" id="customDurationInput" value="15" min="1" max="600" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-1 focus:ring-brand-500">
+                <span class="text-xs text-slate-500 whitespace-nowrap">秒 (最長10分)</span>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-slate-600">輸出解析度 / 比例</label>
+              <select id="resolutionSelect" class="w-full text-xs font-medium bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <option value="original" selected>保持來源原始比例 (預設：照片限1080p / 影片原畫質)</option>
+                <option value="720p">720p (1280x720 橫向 / 手機相容最佳)</option>
+                <option value="portrait">直向 9:16 (720x1280 適用 Reels / Shorts / 抖音)</option>
+                <option value="1080p">1080p (1920x1080 高畫質)</option>
+                <option value="square">正方形 1:1 (720x720 適用貼文)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="lg:col-span-5 space-y-6">
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+            <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+              <i class="fa-solid fa-display text-brand-600"></i>
+              <span>即時同步預覽 (含字幕)</span>
+            </h2>
+            <span id="previewStatusBadge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">待機中</span>
+          </div>
+
+          <div class="relative bg-slate-950 rounded-xl overflow-hidden shadow-inner aspect-video flex items-center justify-center group">
+            <canvas id="previewCanvas" class="max-w-full max-h-full object-contain"></canvas>
+            
+            <div id="previewPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 space-y-2 pointer-events-none p-4 text-center">
+              <i class="fa-solid fa-clapperboard text-3xl text-slate-700"></i>
+              <p class="text-xs">請先於左側載入畫面或音訊檔案</p>
+            </div>
+
+            <button id="overlayPlayBtn" class="hidden absolute w-14 h-14 rounded-full bg-white/90 hover:bg-white text-brand-600 shadow-xl flex items-center justify-center text-xl transition-transform transform active:scale-95 z-20">
+              <i class="fa-solid fa-play ml-1"></i>
+            </button>
+          </div>
+
+          <div class="mt-3 space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+            <div class="flex items-center space-x-2">
+              <input type="range" id="timelineSlider" min="0" max="100" value="0" step="0.1" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <div class="flex items-center justify-between text-xs pt-1">
+              <div class="flex items-center space-x-3">
+                <button id="playPauseBtn" class="w-8 h-8 rounded-lg bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center transition-colors">
+                  <i class="fa-solid fa-play text-xs"></i>
+                </button>
+                <button id="stopBtn" class="w-8 h-8 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors">
+                  <i class="fa-solid fa-stop text-xs"></i>
+                </button>
+              </div>
+
+              <div class="font-mono text-[11px] text-slate-600 bg-white px-2 py-1 rounded border border-slate-200">
+                <span id="currentTimeDisplay">00:00.0</span> / <span id="totalTimeDisplay">00:00.0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-cloud-arrow-down text-brand-600"></i>
+              <h2 class="text-base font-bold text-slate-800">合成與影片匯出</h2>
+            </div>
+            <span id="wakeLockBadge" class="hidden text-[10px] font-medium bg-indigo-50 text-brand-700 px-2 py-0.5 rounded-full border border-brand-200/60 flex items-center space-x-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-brand-600 animate-pulse"></span>
+              <span>螢幕防休眠運作中</span>
+            </span>
+          </div>
+
+          <button id="startExportBtn" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-bold text-sm shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center space-x-2 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-file-video text-base"></i>
+            <span>開始合成並修復時長匯出</span>
+          </button>
+
+          <div id="exportProgressContainer" class="hidden p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span id="exportStatusText" class="font-semibold text-slate-700 flex items-center">
+                <i class="fa-solid fa-circle-notch fa-spin text-brand-600 mr-2"></i>
+                正在進行 Canvas 逐幀渲染...
+              </span>
+              <span id="exportPercentText" class="font-mono font-bold text-brand-600">0%</span>
+            </div>
+            
+            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+              <div id="exportProgressBar" class="bg-brand-600 h-2.5 rounded-full transition-all duration-100" style="width: 0%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span id="exportFrameCounter">影格: 0 / 0</span>
+              <span class="text-brand-600 font-medium"><i class="fa-solid fa-sun mr-1"></i>系統恆亮持鎖中</span>
+            </div>
+          </div>
+
+          <div id="exportSuccessCard" class="hidden p-4 bg-emerald-50 rounded-xl border border-emerald-200 space-y-3">
+            <div class="flex items-center space-x-2 text-emerald-800 font-bold text-xs">
+              <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+              <span>合成成功！已完成標頭時長修正</span>
+            </div>
+            <p class="text-[11px] text-emerald-700">字幕已完美壓印，時間軸已寫入二進制標頭，手機相簿與 IG/Line 皆可完整拖曳播放。</p>
+            
+            <div class="pt-2 flex flex-col sm:flex-row gap-2">
+              <a id="downloadResultBtn" download="composite_video.mp4" class="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs text-center shadow-md shadow-emerald-600/20 transition-colors flex items-center justify-center space-x-1.5">
+                <i class="fa-solid fa-download"></i>
+                <span>下載完整影片檔</span>
+              </a>
+              <button id="previewResultBtn" class="py-2.5 px-3 bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100/50 rounded-lg font-medium text-xs transition-colors">
+                檢視成品
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div class="hidden">
+    <video id="workerMainVideo" playsinline muted preload="auto" crossorigin="anonymous"></video>
+    <img id="workerMainImage" alt="worker image" crossorigin="anonymous">
+    <video id="workerAudioVideo" playsinline muted preload="auto" crossorigin="anonymous"></video>
+  </div>
+
+  <div id="resultModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl animate-fade-in">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center space-x-2">
+          <i class="fa-solid fa-circle-play text-brand-600"></i>
+          <span>合成影片成果試播</span>
+        </h3>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center">
+        <video id="modalVideoPlayer" controls playsinline class="w-full h-full object-contain"></video>
+      </div>
+      <div class="text-right">
+        <button id="closeModalBtn2" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <script>
+    // --- 全域狀態 (v2.7) ---
+    const state = {
+      mainType: null,
+      mainFile: null,
+      mainDuration: 0,
+      mainWidth: 0,
+      mainHeight: 0,
+      
+      mainAudioBuffer: null,
+
+      rawAudioBuffer: null,
+      audioBuffer: null,
+      audioDuration: 0,
+      
+      audioStartSecTotal: 0,
+      audioEndSecTotal: 0,
+
+      // 混音設定
+      mainAudioEnabled: true,
+      mainVolume: 1.0,
+      audioVolume: 1.0,
+      audioOffset: 0.0,
+
+      // 字幕模組 (v2.7)
+      subtitlesEnabled: true,
+      subtitles: [],
+      originalAiSrt: '',
+      subFontSize: 28,
+      subPosition: 'bottom',
+      subColor: '#ffffff',
+      isTranscribing: false,
+
+      // 輸出時長與尺寸
+      durationMode: 'main',
+      customDuration: 15,
+      resolution: 'original',
+
+      // 預覽狀態
+      isPlaying: false,
+      currentTime: 0,
+      totalDuration: 0,
+      animFrameId: null,
+
+      // 匯出狀態
+      isExporting: false,
+      exportBlob: null,
+
+      wakeLockSentinel: null
+    };
+
+    // --- DOM 元素引用 ---
+    const mainFileInput = document.getElementById('mainFileInput');
+    const mainEmptyState = document.getElementById('mainEmptyState');
+    const mainSelectedInfo = document.getElementById('mainSelectedInfo');
+    const mainTypeBadge = document.getElementById('mainTypeBadge');
+    const mainFileName = document.getElementById('mainFileName');
+    const mainMediaMeta = document.getElementById('mainMediaMeta');
+    const mediaSecurityNote = document.getElementById('mediaSecurityNote');
+
+    const audioFileInput = document.getElementById('audioFileInput');
+    const audioEmptyState = document.getElementById('audioEmptyState');
+    const audioSelectedInfo = document.getElementById('audioSelectedInfo');
+    const audioTypeBadge = document.getElementById('audioTypeBadge');
+    const audioFileName = document.getElementById('audioFileName');
+    const audioMediaMeta = document.getElementById('audioMediaMeta');
+    const audioStartMin = document.getElementById('audioStartMin');
+    const audioStartSec = document.getElementById('audioStartSec');
+    const audioEndMin = document.getElementById('audioEndMin');
+    const audioEndSec = document.getElementById('audioEndSec');
+    const audioRangeDuration = document.getElementById('audioRangeDuration');
+    const audioStatusText = document.getElementById('audioStatusText');
+    const testAudioBtn = document.getElementById('testAudioBtn');
+    const waveformCanvas = document.getElementById('waveformCanvas');
+    const waveformCtx = waveformCanvas.getContext('2d');
+
+    // Gemini API 元素
+    const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+    const toggleKeyVisibility = document.getElementById('toggleKeyVisibility');
+    const triggerAiTranscriptionBtn = document.getElementById('triggerAiTranscriptionBtn');
+    const aiTranscribeStatus = document.getElementById('aiTranscribeStatus');
+
+    // 字幕元素
+    const subtitleToggle = document.getElementById('subtitleToggle');
+    const subtitleControlsBody = document.getElementById('subtitleControlsBody');
+    const subtitleInput = document.getElementById('subtitleInput');
+    const subtitleCountText = document.getElementById('subtitleCountText');
+    const uploadSrtBtn = document.getElementById('uploadSrtBtn');
+    const restoreAiSrtBtn = document.getElementById('restoreAiSrtBtn');
+    const srtFileInput = document.getElementById('srtFileInput');
+    const clearSrtBtn = document.getElementById('clearSrtBtn');
+    const subFontSizeSlider = document.getElementById('subFontSizeSlider');
+    const subFontSizeLabel = document.getElementById('subFontSizeLabel');
+    const subPositionSelect = document.getElementById('subPositionSelect');
+    const subColorSelect = document.getElementById('subColorSelect');
+
+    const mainAudioGroup = document.getElementById('mainAudioGroup');
+    const mainAudioToggle = document.getElementById('mainAudioToggle');
+    const mainVolumeSlider = document.getElementById('mainVolumeSlider');
+    const mainVolumeLabel = document.getElementById('mainVolumeLabel');
+    const audioVolumeSlider = document.getElementById('audioVolumeSlider');
+    const audioVolumeLabel = document.getElementById('audioVolumeLabel');
+    const audioOffsetInput = document.getElementById('audioOffsetInput');
+
+    const durationModeSelect = document.getElementById('durationModeSelect');
+    const customDurationBox = document.getElementById('customDurationBox');
+    const customDurationInput = document.getElementById('customDurationInput');
+    const resolutionSelect = document.getElementById('resolutionSelect');
+
+    const previewCanvas = document.getElementById('previewCanvas');
+    const previewCtx = previewCanvas.getContext('2d');
+    const previewPlaceholder = document.getElementById('previewPlaceholder');
+    const previewStatusBadge = document.getElementById('previewStatusBadge');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const overlayPlayBtn = document.getElementById('overlayPlayBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const timelineSlider = document.getElementById('timelineSlider');
+    const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+    const totalTimeDisplay = document.getElementById('totalTimeDisplay');
+
+    const startExportBtn = document.getElementById('startExportBtn');
+    const exportProgressContainer = document.getElementById('exportProgressContainer');
+    const exportProgressBar = document.getElementById('exportProgressBar');
+    const exportStatusText = document.getElementById('exportStatusText');
+    const exportPercentText = document.getElementById('exportPercentText');
+    const exportFrameCounter = document.getElementById('exportFrameCounter');
+    const exportSuccessCard = document.getElementById('exportSuccessCard');
+    const downloadResultBtn = document.getElementById('downloadResultBtn');
+    const previewResultBtn = document.getElementById('previewResultBtn');
+    const wakeLockBadge = document.getElementById('wakeLockBadge');
+
+    const workerMainVideo = document.getElementById('workerMainVideo');
+    const workerMainImage = document.getElementById('workerMainImage');
+    const workerAudioVideo = document.getElementById('workerAudioVideo');
+
+    const resultModal = document.getElementById('resultModal');
+    const modalVideoPlayer = document.getElementById('modalVideoPlayer');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const closeModalBtn2 = document.getElementById('closeModalBtn2');
+
+    // --- Web Audio 節點 ---
+    let audioCtx = null;
+    let previewAudioSource = null;
+    let previewMainAudioSource = null;
+    let previewAudioGain = null;
+    let previewMainGain = null;
+    let previewStartTimestamp = 0;
+    let testAudioSource = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // API Key 本機儲存與載入
+    const STORAGE_KEY = 'composite_gemini_api_key';
+    const savedApiKey = localStorage.getItem(STORAGE_KEY) || '';
+    geminiApiKeyInput.value = savedApiKey;
+    if (savedApiKey) {
+      aiTranscribeStatus.textContent = '金鑰已載入';
+      aiTranscribeStatus.className = 'font-medium text-emerald-600 break-all';
+    }
+
+    geminiApiKeyInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      localStorage.setItem(STORAGE_KEY, val);
+      if (val) {
+        aiTranscribeStatus.textContent = '金鑰已儲存';
+        aiTranscribeStatus.className = 'font-medium text-emerald-600 break-all';
+      } else {
+        aiTranscribeStatus.textContent = '未填寫金鑰';
+        aiTranscribeStatus.className = 'font-medium text-slate-400 break-all';
+      }
+    });
+
+    toggleKeyVisibility.addEventListener('click', () => {
+      if (geminiApiKeyInput.type === 'password') {
+        geminiApiKeyInput.type = 'text';
+        toggleKeyVisibility.innerHTML = '<i class="fa-solid fa-eye-slash text-xs"></i>';
+      } else {
+        geminiApiKeyInput.type = 'password';
+        toggleKeyVisibility.innerHTML = '<i class="fa-solid fa-eye text-xs"></i>';
+      }
+    });
+
+    async function acquireWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          state.wakeLockSentinel = await navigator.wakeLock.request('screen');
+          wakeLockBadge.classList.remove('hidden');
+          state.wakeLockSentinel.addEventListener('release', () => {
+            wakeLockBadge.classList.add('hidden');
+          });
+        }
+      } catch (err) {
+        console.warn('Wake Lock request warning:', err);
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (state.wakeLockSentinel !== null) {
+        try {
+          await state.wakeLockSentinel.release();
+        } catch (e) {}
+        state.wakeLockSentinel = null;
+      }
+      wakeLockBadge.classList.add('hidden');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-rose-600 text-white',
+        warning: 'bg-amber-500 text-white',
+        info: 'bg-slate-800 text-white'
+      };
+
+      const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+      };
+
+      toast.className = `flex items-center space-x-2 px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium transition-all transform duration-300 translate-y-2 opacity-0 pointer-events-auto ${colors[type] || colors.info}`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> <span>${message}</span>`;
+      
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 3500);
+      }, 3500);
+    }
+
+    function formatTime(seconds) {
+      if (isNaN(seconds) || seconds < 0) seconds = 0;
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      const ms = Math.floor((seconds % 1) * 10);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`;
+    }
+
+    // 繪製波形
+    function drawWaveform(buffer) {
+      if (!buffer) return;
+      const width = waveformCanvas.width = waveformCanvas.clientWidth || 300;
+      const height = waveformCanvas.height = 10;
+      waveformCtx.clearRect(0, 0, width, height);
+
+      const data = buffer.getChannelData(0);
+      const step = Math.ceil(data.length / width);
+      const amp = height / 2;
+
+      waveformCtx.fillStyle = '#6366f1';
+      for (let i = 0; i < width; i++) {
+        let min = 1.0;
+        let max = -1.0;
+        for (let j = 0; j < step; j++) {
+          const datum = data[(i * step) + j];
+          if (datum < min) min = datum;
+          if (datum > max) max = datum;
+        }
+        waveformCtx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+      }
+    }
+
+    // 音訊轉碼：原生 FileReader Blob 串流 (極速、零卡頓)
+    async function audioBufferToWavBase64(buffer, targetSampleRate = 16000) {
+      const channelData = buffer.getChannelData(0);
+      const ratio = buffer.sampleRate / targetSampleRate;
+      const newLength = Math.round(channelData.length / ratio);
+      const samples = new Float32Array(newLength);
+      for (let i = 0; i < newLength; i++) {
+        const origIndex = Math.floor(i * ratio);
+        samples[i] = channelData[origIndex] || 0;
+      }
+
+      const dataLength = samples.length * 2;
+      const bufferArray = new ArrayBuffer(44 + dataLength);
+      const view = new DataView(bufferArray);
+
+      const writeString = (v, offset, str) => {
+        for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
+      };
+
+      writeString(view, 0, 'RIFF');
+      view.setUint32(4, 36 + dataLength, true);
+      writeString(view, 8, 'WAVE');
+      writeString(view, 12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // Mono
+      view.setUint32(24, targetSampleRate, true);
+      view.setUint32(28, targetSampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(view, 36, 'data');
+      view.setUint32(40, dataLength, true);
+
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++) {
+        let s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        offset += 2;
+      }
+
+      const blob = new Blob([bufferArray], { type: 'audio/wav' });
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const res = reader.result;
+          const base64 = res.substring(res.indexOf(',') + 1);
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function getAvailableGeminiModels(apiKey) {
+      try {
+        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (listRes.ok) {
+          const data = await listRes.json();
+          const validModels = (data.models || [])
+            .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+            .map(m => m.name.replace(/^models\//, ''));
+          
+          if (validModels.length > 0) {
+            const prefs = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+            const sorted = [];
+            for (const p of prefs) {
+              const match = validModels.find(m => m === p || m.includes(p));
+              if (match && !sorted.includes(match)) sorted.push(match);
+            }
+            validModels.forEach(m => { if (!sorted.includes(m)) sorted.push(m); });
+            return sorted;
+          }
+        }
+      } catch (e) {
+        console.warn('動態模型查詢失敗，使用備援清單:', e);
+      }
+      return ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-pro'];
+    }
+
+    async function performGeminiSpeechToSrt(apiKey, audioBuffer) {
+      aiTranscribeStatus.textContent = '正在壓縮音訊至 16kHz...';
+      aiTranscribeStatus.className = 'font-medium text-brand-600 animate-pulse break-all';
+
+      const base64Wav = await audioBufferToWavBase64(audioBuffer);
+
+      aiTranscribeStatus.textContent = '正在探測可用 AI 模型...';
+      const availableModels = await getAvailableGeminiModels(apiKey);
+
+      aiTranscribeStatus.textContent = 'Gemini AI 正在聽寫語音並生成時間軸...';
+
+      let lastError = null;
+
+      for (const model of availableModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const prompt = "請準確聽寫此音訊內容，並轉換為標準 SRT 字幕格式（每段包含序號、時間軸 00:00:00,000 --> 00:00:00,000，以及繁體中文內容）。請依據語意自然斷句，每一句長度適中（不超過 15 個字）。重要：請只輸出純 SRT 文本，嚴禁包含 markdown 標籤、開頭引言或多餘註釋。";
+
+          const payload = {
+            contents: [{
+              parts: [
+                { text: prompt },
+                {
+                  inline_data: {
+                    mime_type: "audio/wav",
+                    data: base64Wav
+                  }
+                }
+              ]
+            }]
+          };
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error?.message || `HTTP 錯誤 ${res.status}`);
+          }
+
+          const data = await res.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) throw new Error('AI 未返回有效字幕內容');
+
+          // 安全清洗 Markdown 標記
+          return rawText.replaceAll('```srt', '').replaceAll('```', '').trim();
+        } catch (e) {
+          lastError = e;
+          console.warn(`模型 ${model} 呼叫失敗，嘗試下一個備援模型...`, e);
+        }
+      }
+      throw lastError;
+    }
+
+    // 觸發 AI 聽寫動作
+    async function runAiTranscription() {
+      const apiKey = geminiApiKeyInput.value.trim();
+      if (!apiKey) {
+        showToast('請先填入 Gemini API Key 才能執行 AI 自動聽寫！', 'warning');
+        return;
+      }
+      if (!state.mainAudioBuffer) {
+        showToast('請先載入含有原聲音軌的主影片！', 'warning');
+        return;
+      }
+
+      if (state.isTranscribing) return;
+      state.isTranscribing = true;
+      triggerAiTranscriptionBtn.disabled = true;
+
+      try {
+        const srtResult = await performGeminiSpeechToSrt(apiKey, state.mainAudioBuffer);
+        
+        state.originalAiSrt = srtResult;
+        restoreAiSrtBtn.classList.remove('hidden');
+
+        subtitleInput.value = srtResult;
+        parseSubtitlesFromRaw(srtResult, true); // true = 自動跳轉至首句
+
+        aiTranscribeStatus.textContent = 'AI 聽寫完成！字幕已套用';
+        aiTranscribeStatus.className = 'font-medium text-emerald-600 break-all';
+        showToast('AI 聽寫成功！已套用字幕並定位至第一句', 'success');
+      } catch (err) {
+        console.error('Gemini AI 聽寫錯誤:', err);
+        aiTranscribeStatus.textContent = '聽寫失敗: ' + (err.message || 'API 錯誤');
+        aiTranscribeStatus.className = 'font-medium text-rose-500 break-all';
+        showToast(`AI 聽寫失敗: ${err.message}`, 'error');
+      } finally {
+        state.isTranscribing = false;
+        triggerAiTranscriptionBtn.disabled = false;
+      }
+    }
+
+    triggerAiTranscriptionBtn.addEventListener('click', runAiTranscription);
+
+    // 一鍵還原 AI 原始聽寫字幕
+    restoreAiSrtBtn.addEventListener('click', () => {
+      if (!state.originalAiSrt) {
+        showToast('無可還原之 AI 原始文字檔', 'info');
+        return;
+      }
+      subtitleInput.value = state.originalAiSrt;
+      parseSubtitlesFromRaw(state.originalAiSrt, true);
+      showToast('已成功還原為 AI 原始聽寫字幕！', 'success');
+    });
+
+    // ★ v2.7 核心修復：自適應時間解析器 (徹底根除將 971 毫秒誤算為 971 秒的 16 分鐘膨脹 Bug)
+    function convertTimeToSeconds(tStr) {
+      if (!tStr) return 0;
+      let s = tStr.trim().replace(',', '.');
+      const parts = s.split(':');
+
+      if (parts.length === 4) {
+        // 時:分:秒:毫秒 (例 00:00:03:107)
+        return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]) + (parseFloat(parts[3]) / 1000);
+      } else if (parts.length === 3) {
+        // 判斷最後一段是否為 3 位純整數 (毫秒，例如 00:03:971 -> 3.971 秒)
+        if (/^\d{3}$/.test(parts[2])) {
+          return parseFloat(parts[0]) * 60 + parseFloat(parts[1]) + (parseFloat(parts[2]) / 1000);
+        } else {
+          // 標準 時:分:秒.毫秒 (例如 00:01:23.456)
+          return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+        }
+      } else if (parts.length === 2) {
+        if (/^\d{3}$/.test(parts[1])) {
+          // 秒:毫秒
+          return parseFloat(parts[0]) + (parseFloat(parts[1]) / 1000);
+        }
+        // 分:秒.毫秒
+        return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+      }
+      return parseFloat(s) || 0;
+    }
+
+    // ★ v2.7 核心：逐行狀態機解析器 (支援單換行、雙換行、緊湊排版，100% 杜絕解析丟失)
+    function parseSubtitlesFromRaw(text, autoSeekToFirst = false) {
+      if (!text || !text.trim()) {
+        state.subtitles = [];
+        subtitleCountText.textContent = '已解析: 0 句字幕';
+        renderCurrentFrame(state.currentTime);
+        return;
+      }
+
+      const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+
+      if (normalized.includes('-->')) {
+        const lines = normalized.split('\n').map(l => l.trim());
+        const items = [];
+        let currentSub = null;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (!line) continue;
+
+          if (line.includes('-->')) {
+            // 遇到新時間行，儲存前一筆有效字幕
+            if (currentSub && currentSub.text && currentSub.end > currentSub.start) {
+              items.push(currentSub);
+            }
+            const parts = line.split('-->');
+            if (parts.length === 2) {
+              currentSub = {
+                start: convertTimeToSeconds(parts[0]),
+                end: convertTimeToSeconds(parts[1]),
+                text: ''
+              };
+            }
+          } else if (currentSub) {
+            // 排除純數字序號行
+            if (!/^\d+$/.test(line)) {
+              const cleanLine = line.replace(/<[^>]*>/g, '').trim();
+              if (cleanLine) {
+                currentSub.text = currentSub.text ? `${currentSub.text}\n${cleanLine}` : cleanLine;
+              }
+            }
+          }
+        }
+
+        // 加入最後一筆字幕
+        if (currentSub && currentSub.text && currentSub.end > currentSub.start) {
+          items.push(currentSub);
+        }
+
+        if (items.length > 0) {
+          state.subtitles = items;
+          subtitleCountText.textContent = `已解析: ${items.length} 句字幕 (SRT 精準時間軸)`;
+
+          // 自動跳轉至第一句字幕秒數 (+0.05s 確保命中顯現)
+          if (autoSeekToFirst && state.subtitles.length > 0) {
+            const firstTime = Math.max(0, state.subtitles[0].start + 0.05);
+            state.currentTime = firstTime;
+            timelineSlider.value = firstTime;
+            currentTimeDisplay.textContent = formatTime(firstTime);
+          }
+
+          renderCurrentFrame(state.currentTime);
+          return;
+        }
+      }
+
+      // 備援：純文字文案 (自動過濾純數字序號與時間語法，按總時長均分)
+      const rawLines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
+      const cleanLines = rawLines.filter(l => !/^\d+$/.test(l) && !l.includes('-->'));
+      const items = [];
+      if (cleanLines.length > 0) {
+        const total = state.totalDuration > 0 ? state.totalDuration : 15;
+        const durationPerLine = total / cleanLines.length;
+        cleanLines.forEach((line, idx) => {
+          items.push({
+            start: Math.round(idx * durationPerLine * 10) / 10,
+            end: Math.round((idx + 1) * durationPerLine * 10) / 10,
+            text: line
+          });
+        });
+      }
+
+      state.subtitles = items;
+      subtitleCountText.textContent = `已解析: ${items.length} 句字幕 (純文案均勻分配)`;
+
+      if (autoSeekToFirst && state.subtitles.length > 0) {
+        const firstTime = Math.max(0, state.subtitles[0].start + 0.05);
+        state.currentTime = firstTime;
+        timelineSlider.value = firstTime;
+        currentTimeDisplay.textContent = formatTime(firstTime);
+      }
+
+      renderCurrentFrame(state.currentTime);
+    }
+
+    subtitleInput.addEventListener('input', (e) => {
+      parseSubtitlesFromRaw(e.target.value, false);
+    });
+
+    subtitleInput.addEventListener('dragover', (e) => e.preventDefault());
+    subtitleInput.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const text = await file.text();
+        subtitleInput.value = text;
+        parseSubtitlesFromRaw(text, true);
+        showToast(`已匯入字幕檔: ${file.name}`, 'success');
+      }
+    });
+
+    uploadSrtBtn.addEventListener('click', () => srtFileInput.click());
+    srtFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const text = await file.text();
+        subtitleInput.value = text;
+        parseSubtitlesFromRaw(text, true);
+        showToast(`已匯入字幕檔: ${file.name}`, 'success');
+      }
+    });
+
+    clearSrtBtn.addEventListener('click', () => {
+      subtitleInput.value = '';
+      parseSubtitlesFromRaw('', false);
+      showToast('已清空字幕', 'info');
+    });
+
+    subtitleToggle.addEventListener('change', (e) => {
+      state.subtitlesEnabled = e.target.checked;
+      subtitleControlsBody.classList.toggle('opacity-40', !state.subtitlesEnabled);
+      renderCurrentFrame(state.currentTime);
+    });
+
+    subFontSizeSlider.addEventListener('input', (e) => {
+      state.subFontSize = parseInt(e.target.value);
+      subFontSizeLabel.textContent = `${state.subFontSize}px`;
+      renderCurrentFrame(state.currentTime);
+    });
+
+    subPositionSelect.addEventListener('change', (e) => {
+      state.subPosition = e.target.value;
+      renderCurrentFrame(state.currentTime);
+    });
+
+    subColorSelect.addEventListener('change', (e) => {
+      state.subColor = e.target.value;
+      renderCurrentFrame(state.currentTime);
+    });
+
+    // 繪製字幕層至指定畫布 (預覽與匯出 100% 同步)
+    function drawSubtitles(ctx, time, targetW, targetH) {
+      if (!state.subtitlesEnabled || !state.subtitles || state.subtitles.length === 0) return;
+
+      const currentSub = state.subtitles.find(s => time >= s.start && time <= s.end);
+      if (!currentSub) return;
+
+      const scaleFactor = Math.min(targetW, targetH) / 720;
+      const fontSize = Math.max(14, Math.round(state.subFontSize * scaleFactor));
+
+      ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif, "PingFang TC", "Microsoft JhengHei"`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      const lines = currentSub.text.split('\n');
+      const lineHeight = fontSize * 1.35;
+
+      let startY = targetH - (targetH * 0.12);
+      if (state.subPosition === 'top') {
+        startY = targetH * 0.12;
+      } else if (state.subPosition === 'center') {
+        startY = (targetH - ((lines.length - 1) * lineHeight)) / 2;
+      }
+
+      lines.forEach((line, idx) => {
+        const y = startY + (idx * lineHeight);
+        const strokeColor = state.subColor === '#000000' ? '#ffffff' : '#000000';
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = Math.max(3, fontSize * 0.16);
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.strokeText(line, targetW / 2, y);
+
+        ctx.fillStyle = state.subColor;
+        ctx.fillText(line, targetW / 2, y);
+      });
+    }
+
+    // --- Web Audio 緩衝區區間裁切工具 ---
+    function sliceAudioBuffer(origBuffer, startSec, endSec) {
+      if (!origBuffer) return null;
+      const sampleRate = origBuffer.sampleRate;
+      const channels = origBuffer.numberOfChannels;
+      
+      const startOffset = Math.max(0, Math.floor(startSec * sampleRate));
+      const endOffset = Math.min(origBuffer.length, Math.floor(endSec * sampleRate));
+      const frameCount = Math.max(1, endOffset - startOffset);
+      
+      const ctx = getAudioContext();
+      const sliced = ctx.createBuffer(channels, frameCount, sampleRate);
+      
+      for (let ch = 0; ch < channels; ch++) {
+        const origData = origBuffer.getChannelData(ch);
+        const slicedData = sliced.getChannelData(ch);
+        for (let i = 0; i < frameCount; i++) {
+          slicedData[i] = origData[startOffset + i];
+        }
+      }
+      return sliced;
+    }
+
+    function updateAudioRangeSlice() {
+      const startMin = parseInt(audioStartMin.value) || 0;
+      const startSec = parseInt(audioStartSec.value) || 0;
+      const endMin = parseInt(audioEndMin.value) || 0;
+      const endSec = parseInt(audioEndSec.value) || 0;
+
+      const totalStart = startMin * 60 + startSec;
+      const totalEnd = endMin * 60 + endSec;
+
+      if (totalEnd <= totalStart && state.rawAudioBuffer) {
+        audioRangeDuration.textContent = '結束需大於開始';
+        audioRangeDuration.className = 'font-mono font-semibold text-rose-500';
+        return;
+      }
+
+      state.audioStartSecTotal = totalStart;
+      state.audioEndSecTotal = totalEnd;
+      const rangeLen = Math.max(0, totalEnd - totalStart);
+      audioRangeDuration.textContent = `區間: ${formatTime(rangeLen)}`;
+      audioRangeDuration.className = 'font-mono font-semibold text-brand-600';
+
+      if (state.rawAudioBuffer && rangeLen > 0) {
+        state.audioBuffer = sliceAudioBuffer(state.rawAudioBuffer, totalStart, totalEnd);
+        state.audioDuration = state.audioBuffer.duration;
+        drawWaveform(state.audioBuffer);
+        recalculateTotalDuration();
+      }
+    }
+
+    [audioStartMin, audioStartSec, audioEndMin, audioEndSec].forEach(el => {
+      el.addEventListener('input', updateAudioRangeSlice);
+    });
+
+    // 試聽區間按鈕
+    testAudioBtn.addEventListener('click', () => {
+      const ctx = getAudioContext();
+      if (testAudioSource) {
+        try { testAudioSource.stop(); } catch (e) {}
+        testAudioSource = null;
+        testAudioBtn.innerHTML = '<i class="fa-solid fa-volume-high mr-0.5"></i> 試聽區間';
+        return;
+      }
+      if (!state.audioBuffer) return;
+
+      testAudioSource = ctx.createBufferSource();
+      testAudioSource.buffer = state.audioBuffer;
+      const gain = ctx.createGain();
+      gain.gain.value = state.audioVolume;
+      testAudioSource.connect(gain);
+      gain.connect(ctx.destination);
+      testAudioSource.start();
+      testAudioBtn.innerHTML = '<i class="fa-solid fa-square text-rose-500 mr-0.5"></i> 停止試聽';
+
+      testAudioSource.onended = () => {
+        testAudioBtn.innerHTML = '<i class="fa-solid fa-volume-high mr-0.5"></i> 試聽區間';
+        testAudioSource = null;
+      };
+    });
+
+    // --- 1. 主畫面檔案載入 ---
+    mainFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const isImg = file.type.startsWith('image/');
+      const isVid = file.type.startsWith('video/');
+
+      if (!isImg && !isVid) {
+        showToast('請上傳合法的影片或圖片檔案', 'error');
+        return;
+      }
+
+      state.mainFile = file;
+      state.mainType = isImg ? 'image' : 'video';
+      state.mainAudioBuffer = null;
+      mainFileName.textContent = file.name;
+
+      if (isImg) {
+        mainTypeBadge.textContent = '圖片';
+        mainTypeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-700';
+        mainAudioGroup.classList.add('opacity-40', 'pointer-events-none');
+        mainAudioToggle.checked = false;
+        state.mainAudioEnabled = false;
+
+        const url = URL.createObjectURL(file);
+        workerMainImage.src = url;
+        await new Promise((resolve) => {
+          workerMainImage.onload = () => {
+            let nw = workerMainImage.naturalWidth || 1280;
+            let nh = workerMainImage.naturalHeight || 720;
+
+            let maxW = 1920;
+            let maxH = 1080;
+            if (nh > nw) {
+              maxW = 1080;
+              maxH = 1920;
+            } else if (nw === nh) {
+              maxW = 1080;
+              maxH = 1080;
+            }
+
+            const scale = Math.min(1, maxW / nw, maxH / nh);
+            nw = Math.round(nw * scale);
+            nh = Math.round(nh * scale);
+
+            state.mainWidth = nw - (nw % 2);
+            state.mainHeight = nh - (nh % 2);
+            state.mainDuration = 10;
+            resolve();
+          };
+        });
+
+        mainMediaMeta.textContent = `照片原比例 (限1080p): ${state.mainWidth}x${state.mainHeight}`;
+        mediaSecurityNote.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> 已啟用全圖完整投射渲染';
+        if (state.durationMode === 'main') {
+          state.durationMode = 'audio';
+          durationModeSelect.value = 'audio';
+        }
+      } else {
+        mainTypeBadge.textContent = '影片';
+        mainTypeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-100 text-brand-700';
+        mainAudioGroup.classList.remove('opacity-40', 'pointer-events-none');
+        mainAudioToggle.checked = true;
+        state.mainAudioEnabled = true;
+
+        const url = URL.createObjectURL(file);
+        workerMainVideo.src = url;
+        workerMainVideo.muted = true;
+
+        await new Promise((resolve) => {
+          workerMainVideo.onloadedmetadata = () => {
+            let vw = workerMainVideo.videoWidth || 1280;
+            let vh = workerMainVideo.videoHeight || 720;
+
+            state.mainWidth = vw - (vw % 2);
+            state.mainHeight = vh - (vh % 2);
+            state.mainDuration = workerMainVideo.duration || 10;
+            resolve();
+          };
+        });
+
+        workerMainVideo.currentTime = 0.001;
+        await new Promise((resolve) => {
+          workerMainVideo.onseeked = () => resolve();
+        });
+
+        // 異步提取 PCM 原聲
+        try {
+          const vBuffer = await file.arrayBuffer();
+          const actx = getAudioContext();
+          await actx.resume();
+          state.mainAudioBuffer = await actx.decodeAudioData(vBuffer.slice(0));
+          mediaSecurityNote.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> 已提取主影片原聲 (PCM 雙軌混音就緒)';
+        } catch (vAudioErr) {
+          console.warn('主影片無音軌或格式不支援:', vAudioErr);
+          state.mainAudioBuffer = null;
+          mediaSecurityNote.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> 主影片無原聲音軌或已載入完成';
+        }
+
+        mainMediaMeta.textContent = `影片原像素: ${state.mainWidth}x${state.mainHeight} | 時長: ${formatTime(state.mainDuration)}`;
+        if (state.durationMode === 'audio' && !state.audioBuffer) {
+          state.durationMode = 'main';
+          durationModeSelect.value = 'main';
+        }
+      }
+
+      mainEmptyState.classList.add('hidden');
+      mainSelectedInfo.classList.remove('hidden');
+      
+      recalculateTotalDuration();
+      setupCanvasResolution();
+      renderCurrentFrame(0);
+      showToast(`主畫面已載入 (${state.mainWidth}x${state.mainHeight})`, 'success');
+    });
+
+    // --- 實體音源檔案載入與 PCM 解碼 ---
+    audioFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const isAudio = file.type.startsWith('audio/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isAudio && !isVideo) {
+        showToast('請上傳音訊檔 (MP3, WAV, M4A) 或影片檔 (MP4)', 'error');
+        return;
+      }
+
+      audioFileName.textContent = file.name;
+      if (isVideo) {
+        audioTypeBadge.textContent = '影片提取';
+        audioTypeBadge.className = 'px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-pink-100 text-pink-700';
+      } else {
+        audioTypeBadge.textContent = '音訊檔';
+        audioTypeBadge.className = 'px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-purple-100 text-purple-700';
+      }
+
+      showToast('正在解析音軌至 PCM 記憶體...', 'info');
+
+      try {
+        const rawBuffer = await file.arrayBuffer();
+        const ctx = getAudioContext();
+        await ctx.resume();
+
+        let decodedBuffer = null;
+        try {
+          decodedBuffer = await ctx.decodeAudioData(rawBuffer.slice(0));
+        } catch (innerErr) {
+          if (isVideo) {
+            const vUrl = URL.createObjectURL(file);
+            workerAudioVideo.src = vUrl;
+            await new Promise((res) => {
+              workerAudioVideo.onloadedmetadata = () => res();
+            });
+            showToast('已由視訊軌中分離音訊', 'info');
+          }
+          throw innerErr;
+        }
+
+        state.rawAudioBuffer = decodedBuffer;
+        
+        audioStartMin.value = 0;
+        audioStartSec.value = 0;
+        const totalSec = Math.floor(decodedBuffer.duration);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        audioEndMin.value = m;
+        audioEndSec.value = s;
+
+        state.audioStartSecTotal = 0;
+        state.audioEndSecTotal = decodedBuffer.duration;
+
+        updateAudioRangeSlice();
+
+        audioMediaMeta.textContent = `原始時長: ${formatTime(decodedBuffer.duration)}`;
+        audioEmptyState.classList.add('hidden');
+        audioSelectedInfo.classList.remove('hidden');
+        audioStatusText.textContent = `已成功解析全時長 (${decodedBuffer.sampleRate}Hz)`;
+        testAudioBtn.classList.remove('hidden');
+
+        recalculateTotalDuration();
+        showToast(`音訊解析成功！已預設為全曲長度: ${formatTime(decodedBuffer.duration)}`, 'success');
+      } catch (err) {
+        console.error('音訊解碼失敗:', err);
+        showToast('音訊解碼失敗。若為特殊編碼影片，建議先以 yt5s.biz 轉為 MP3 再載入！', 'warning');
+      }
+    });
+
+    // --- 2. 時長與解析度計算 ---
+    function recalculateTotalDuration() {
+      const mode = durationModeSelect.value;
+      if (mode === 'main') {
+        state.totalDuration = state.mainDuration || (state.audioDuration || 15);
+      } else if (mode === 'audio') {
+        state.totalDuration = state.audioDuration || (state.mainDuration || 15);
+      } else if (mode === 'custom') {
+        state.totalDuration = parseFloat(customDurationInput.value) || 15;
+      }
+
+      totalTimeDisplay.textContent = formatTime(state.totalDuration);
+      timelineSlider.max = state.totalDuration;
+
+      if (subtitleInput.value.trim() && state.subtitles.length === 0) {
+        parseSubtitlesFromRaw(subtitleInput.value, false);
+      }
+    }
+
+    durationModeSelect.addEventListener('change', (e) => {
+      state.durationMode = e.target.value;
+      if (state.durationMode === 'custom') {
+        customDurationBox.classList.remove('hidden');
+      } else {
+        customDurationBox.classList.add('hidden');
+      }
+      recalculateTotalDuration();
+    });
+
+    customDurationInput.addEventListener('input', () => {
+      recalculateTotalDuration();
+    });
+
+    function getTargetDimensions() {
+      const res = resolutionSelect.value;
+      let w = 1280, h = 720;
+
+      if (res === 'original') {
+        w = state.mainWidth || 1280;
+        h = state.mainHeight || 720;
+      } else if (res === '720p') {
+        w = 1280; h = 720;
+      } else if (res === '1080p') {
+        w = 1920; h = 1080;
+      } else if (res === 'portrait') {
+        w = 720; h = 1280;
+      } else if (res === 'square') {
+        w = 720; h = 720;
+      }
+
+      w = w - (w % 2);
+      h = h - (h % 2);
+
+      return { width: w, height: h };
+    }
+
+    function setupCanvasResolution() {
+      const dim = getTargetDimensions();
+      previewCanvas.width = dim.width;
+      previewCanvas.height = dim.height;
+      if (state.mainType) {
+        previewPlaceholder.classList.add('hidden');
+      }
+    }
+
+    resolutionSelect.addEventListener('change', () => {
+      setupCanvasResolution();
+      renderCurrentFrame(state.currentTime);
+    });
+
+    // --- 3. 混音控制參數更新 ---
+    mainAudioToggle.addEventListener('change', (e) => {
+      state.mainAudioEnabled = e.target.checked;
+      if (previewMainGain) {
+        previewMainGain.gain.value = state.mainAudioEnabled ? state.mainVolume : 0;
+      }
+    });
+
+    mainVolumeSlider.addEventListener('input', (e) => {
+      state.mainVolume = parseInt(e.target.value) / 100;
+      mainVolumeLabel.textContent = `${e.target.value}%`;
+      if (previewMainGain && state.mainAudioEnabled) {
+        previewMainGain.gain.value = state.mainVolume;
+      }
+    });
+
+    audioVolumeSlider.addEventListener('input', (e) => {
+      state.audioVolume = parseInt(e.target.value) / 100;
+      audioVolumeLabel.textContent = `${e.target.value}%`;
+      if (previewAudioGain) {
+        previewAudioGain.gain.value = state.audioVolume;
+      }
+    });
+
+    audioOffsetInput.addEventListener('change', (e) => {
+      state.audioOffset = parseFloat(e.target.value) || 0;
+    });
+
+    // 4. 畫布渲染引擎：5 參數全圖等比投射 + 字幕即時壓印
+    function drawFitMedia(ctx, targetW, targetH, sourceElement, aspectW, aspectH) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, targetW, targetH);
+
+      if (!sourceElement || !aspectW || !aspectH) return;
+
+      const scale = Math.min(targetW / aspectW, targetH / aspectH);
+      const drawW = Math.round(aspectW * scale);
+      const drawH = Math.round(aspectH * scale);
+      const dx = Math.round((targetW - drawW) / 2);
+      const dy = Math.round((targetH - drawH) / 2);
+
+      ctx.drawImage(sourceElement, dx, dy, drawW, drawH);
+    }
+
+    function renderCurrentFrame(time) {
+      const dim = getTargetDimensions();
+      if (previewCanvas.width !== dim.width || previewCanvas.height !== dim.height) {
+        previewCanvas.width = dim.width;
+        previewCanvas.height = dim.height;
+      }
+
+      if (state.mainType === 'image') {
+        drawFitMedia(previewCtx, dim.width, dim.height, workerMainImage, state.mainWidth, state.mainHeight);
+      } else if (state.mainType === 'video') {
+        if (state.mainDuration > 0) {
+          const videoTime = time % state.mainDuration;
+          if (Math.abs(workerMainVideo.currentTime - videoTime) > 0.3) {
+            workerMainVideo.currentTime = videoTime;
+          }
+        }
+        drawFitMedia(previewCtx, dim.width, dim.height, workerMainVideo, state.mainWidth, state.mainHeight);
+      } else {
+        previewCtx.fillStyle = '#0f172a';
+        previewCtx.fillRect(0, 0, dim.width, dim.height);
+      }
+
+      // 壓印字幕圖層
+      drawSubtitles(previewCtx, time, dim.width, dim.height);
+    }
+
+    // --- 5. 即時同步預覽控制器 ---
+    function startPreviewPlayback(startTime = 0) {
+      if (!state.mainType && !state.audioBuffer) {
+        showToast('請先載入主畫面或真實音訊檔案', 'warning');
+        return;
+      }
+
+      const ctx = getAudioContext();
+      stopPreviewAudio();
+
+      state.isPlaying = true;
+      state.currentTime = startTime;
+      previewStartTimestamp = performance.now() - (startTime * 1000);
+
+      // 軌道 1：主影片 PCM 原聲播放
+      if (state.mainType === 'video' && state.mainAudioEnabled && state.mainAudioBuffer) {
+        previewMainAudioSource = ctx.createBufferSource();
+        previewMainAudioSource.buffer = state.mainAudioBuffer;
+        previewMainAudioSource.loop = true;
+
+        previewMainGain = ctx.createGain();
+        previewMainGain.gain.value = state.mainVolume;
+
+        previewMainAudioSource.connect(previewMainGain);
+        previewMainGain.connect(ctx.destination);
+
+        const mainStartOffset = (state.currentTime % state.mainAudioBuffer.duration);
+        try {
+          previewMainAudioSource.start(0, mainStartOffset);
+        } catch (e) {
+          console.warn('主影片原聲啟動提示:', e);
+        }
+      }
+
+      // 軌道 2：新聲音 PCM 播放
+      if (state.audioBuffer) {
+        previewAudioSource = ctx.createBufferSource();
+        previewAudioSource.buffer = state.audioBuffer;
+        previewAudioSource.loop = true;
+
+        previewAudioGain = ctx.createGain();
+        previewAudioGain.gain.value = state.audioVolume;
+
+        previewAudioSource.connect(previewAudioGain);
+        previewAudioGain.connect(ctx.destination);
+
+        const effectiveTime = state.currentTime - state.audioOffset;
+        let startOffset = 0;
+        if (effectiveTime >= 0) {
+          startOffset = effectiveTime % state.audioBuffer.duration;
+        } else {
+          startOffset = 0;
+        }
+
+        try {
+          if (effectiveTime >= 0) {
+            previewAudioSource.start(0, startOffset);
+          } else {
+            previewAudioSource.start(ctx.currentTime + Math.abs(effectiveTime), 0);
+          }
+        } catch (e) {
+          console.warn('新音軌啟動提示:', e);
+        }
+      }
+
+      if (state.mainType === 'video') {
+        workerMainVideo.muted = true;
+        workerMainVideo.currentTime = state.currentTime % (state.mainDuration || 1);
+        workerMainVideo.play().catch(() => {});
+      }
+
+      playPauseBtn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i>';
+      overlayPlayBtn.classList.add('hidden');
+      previewStatusBadge.textContent = '播放中';
+      previewStatusBadge.className = 'text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-mono';
+
+      function loop() {
+        if (!state.isPlaying) return;
+
+        const now = performance.now();
+        const elapsed = (now - previewStartTimestamp) / 1000;
+        state.currentTime = elapsed;
+
+        if (state.currentTime >= state.totalDuration) {
+          stopPreviewPlayback();
+          renderCurrentFrame(0);
+          timelineSlider.value = 0;
+          currentTimeDisplay.textContent = formatTime(0);
+          return;
+        }
+
+        timelineSlider.value = state.currentTime;
+        currentTimeDisplay.textContent = formatTime(state.currentTime);
+
+        renderCurrentFrame(state.currentTime);
+
+        state.animFrameId = requestAnimationFrame(loop);
+      }
+
+      state.animFrameId = requestAnimationFrame(loop);
+    }
+
+    function pausePreviewPlayback() {
+      state.isPlaying = false;
+      if (state.animFrameId) cancelAnimationFrame(state.animFrameId);
+      stopPreviewAudio();
+
+      if (state.mainType === 'video') {
+        workerMainVideo.pause();
+      }
+
+      playPauseBtn.innerHTML = '<i class="fa-solid fa-play text-xs"></i>';
+      previewStatusBadge.textContent = '已暫停';
+      previewStatusBadge.className = 'text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-mono';
+    }
+
+    function stopPreviewPlayback() {
+      pausePreviewPlayback();
+      state.currentTime = 0;
+      timelineSlider.value = 0;
+      currentTimeDisplay.textContent = formatTime(0);
+      renderCurrentFrame(0);
+      previewStatusBadge.textContent = '待機中';
+      previewStatusBadge.className = 'text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono';
+    }
+
+    function stopPreviewAudio() {
+      if (previewAudioSource) {
+        try {
+          previewAudioSource.stop();
+          previewAudioSource.disconnect();
+        } catch (e) {}
+        previewAudioSource = null;
+      }
+      if (previewMainAudioSource) {
+        try {
+          previewMainAudioSource.stop();
+          previewMainAudioSource.disconnect();
+        } catch (e) {}
+        previewMainAudioSource = null;
+      }
+    }
+
+    playPauseBtn.addEventListener('click', () => {
+      if (state.isPlaying) {
+        pausePreviewPlayback();
+      } else {
+        startPreviewPlayback(state.currentTime);
+      }
+    });
+
+    overlayPlayBtn.addEventListener('click', () => {
+      startPreviewPlayback(0);
+    });
+
+    stopBtn.addEventListener('click', stopPreviewPlayback);
+
+    timelineSlider.addEventListener('input', (e) => {
+      const targetTime = parseFloat(e.target.value);
+      state.currentTime = targetTime;
+      currentTimeDisplay.textContent = formatTime(targetTime);
+      renderCurrentFrame(targetTime);
+      if (state.isPlaying) {
+        startPreviewPlayback(targetTime);
+      }
+    });
+
+    // --- 6. 二進制標頭時長校正器 ---
+    async function fixWebmDuration(blob, durationSeconds) {
+      try {
+        const buffer = await blob.arrayBuffer();
+        const view = new DataView(buffer);
+        const bytes = new Uint8Array(buffer);
+        let durationOffset = -1;
+
+        for (let i = 0; i < bytes.length - 8; i++) {
+          if (bytes[i] === 0x44 && bytes[i + 1] === 0x89) {
+            durationOffset = i;
+            break;
+          }
+        }
+
+        const durationMs = durationSeconds * 1000;
+
+        if (durationOffset !== -1) {
+          const lenByte = bytes[durationOffset + 2];
+          if (lenByte === 0x84 || lenByte === 0x04) {
+            view.setFloat32(durationOffset + 3, durationMs, false);
+            return new Blob([buffer], { type: 'video/webm' });
+          } else if (lenByte === 0x88 || lenByte === 0x08) {
+            view.setFloat64(durationOffset + 3, durationMs, false);
+            return new Blob([buffer], { type: 'video/webm' });
+          }
+        }
+        return blob;
+      } catch (err) {
+        console.warn('WebM 時長校正例外:', err);
+        return blob;
+      }
+    }
+
+    async function fixMp4Duration(blob, durationSeconds) {
+      try {
+        const buffer = await blob.arrayBuffer();
+        const view = new DataView(buffer);
+        const bytes = new Uint8Array(buffer);
+
+        for (let i = 0; i < bytes.length - 24; i++) {
+          if (
+            bytes[i] === 0x6D &&
+            bytes[i + 1] === 0x76 &&
+            bytes[i + 2] === 0x68 &&
+            bytes[i + 3] === 0x64
+          ) {
+            const version = view.getUint8(i + 4);
+            const timescaleOffset = version === 1 ? i + 24 : i + 16;
+            const durationOffset = version === 1 ? i + 28 : i + 20;
+
+            const timescale = view.getUint32(timescaleOffset, false);
+            if (timescale > 0 && timescale < 10000000) {
+              const targetUnits = Math.floor(durationSeconds * timescale);
+              if (version === 1) {
+                view.setBigUint64(durationOffset, BigInt(targetUnits), false);
+              } else {
+                view.setUint32(durationOffset, targetUnits, false);
+              }
+            }
+            break;
+          }
+        }
+        return new Blob([buffer], { type: blob.type || 'video/mp4' });
+      } catch (err) {
+        console.warn('MP4 時長校正例外:', err);
+        return blob;
+      }
+    }
+
+    // --- 7. 合成匯出管線 ---
+    startExportBtn.addEventListener('click', async () => {
+      if (state.isExporting) return;
+      if (!state.mainType && !state.audioBuffer) {
+        showToast('請先載入主畫面或真實音訊檔案', 'warning');
+        return;
+      }
+
+      const ctx = getAudioContext();
+      await ctx.resume();
+
+      await acquireWakeLock();
+
+      stopPreviewPlayback();
+
+      state.isExporting = true;
+      startExportBtn.disabled = true;
+      exportSuccessCard.classList.add('hidden');
+      exportProgressContainer.classList.remove('hidden');
+      exportProgressBar.style.width = '0%';
+      exportPercentText.textContent = '0%';
+      exportStatusText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-brand-600 mr-2"></i> 正在初始化合成管線...';
+
+      const dim = getTargetDimensions();
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = dim.width;
+      exportCanvas.height = dim.height;
+      const exportCtx = exportCanvas.getContext('2d');
+
+      const streamDest = ctx.createMediaStreamDestination();
+
+      // 軌道 1：主影片 PCM 原聲 (數位混音)
+      let exportMainAudioSource = null;
+      if (state.mainType === 'video' && state.mainAudioEnabled && state.mainAudioBuffer) {
+        exportMainAudioSource = ctx.createBufferSource();
+        exportMainAudioSource.buffer = state.mainAudioBuffer;
+        exportMainAudioSource.loop = true;
+
+        const mainGainNode = ctx.createGain();
+        mainGainNode.gain.value = state.mainVolume;
+
+        exportMainAudioSource.connect(mainGainNode);
+        mainGainNode.connect(streamDest);
+      }
+
+      // 軌道 2：新聲音 (PCM 裁切區間)
+      let exportAudioSource = null;
+      if (state.audioBuffer) {
+        exportAudioSource = ctx.createBufferSource();
+        exportAudioSource.buffer = state.audioBuffer;
+        exportAudioSource.loop = true;
+
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = state.audioVolume;
+
+        exportAudioSource.connect(gainNode);
+        gainNode.connect(streamDest);
+      }
+
+      const fps = 30;
+      const canvasStream = exportCanvas.captureStream(fps);
+
+      const combinedTracks = [
+        ...canvasStream.getVideoTracks(),
+        ...streamDest.stream.getAudioTracks()
+      ];
+      const combinedStream = new MediaStream(combinedTracks);
+
+      let mimeType = 'video/webm;codecs=vp8,opus';
+      const supportedTypes = [
+        'video/mp4;codecs=avc1,mp4a.40.2',
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm'
+      ];
+      for (const t of supportedTypes) {
+        if (MediaRecorder.isTypeSupported(t)) {
+          mimeType = t;
+          break;
+        }
+      }
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType: mimeType,
+        videoBitsPerSecond: 4000000
+      });
+
+      const recordedChunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+
+      const targetTotalSeconds = state.totalDuration;
+      const totalFrames = Math.ceil(targetTotalSeconds * fps);
+      let currentFrame = 0;
+
+      recorder.start();
+
+      if (exportMainAudioSource) {
+        exportMainAudioSource.start(0, 0);
+      }
+
+      if (exportAudioSource) {
+        const effectiveOffset = -state.audioOffset;
+        if (effectiveOffset <= 0) {
+          exportAudioSource.start(0, Math.abs(effectiveOffset) % state.audioBuffer.duration);
+        } else {
+          exportAudioSource.start(ctx.currentTime + effectiveOffset, 0);
+        }
+      }
+
+      if (state.mainType === 'video') {
+        workerMainVideo.currentTime = 0;
+        workerMainVideo.play().catch(() => {});
+      }
+
+      exportStatusText.innerHTML = '<i class="fa-solid fa-gear fa-spin text-brand-600 mr-2"></i> 正在逐幀繪製與壓印字幕 (螢幕防休眠持鎖中)...';
+      const frameIntervalMs = 1000 / fps;
+      const exportStartTime = performance.now();
+
+      function exportLoop() {
+        if (currentFrame >= totalFrames) {
+          finishExport();
+          return;
+        }
+
+        const currentFrameTime = currentFrame / fps;
+
+        if (state.mainType === 'image') {
+          drawFitMedia(exportCtx, dim.width, dim.height, workerMainImage, state.mainWidth, state.mainHeight);
+        } else if (state.mainType === 'video') {
+          drawFitMedia(exportCtx, dim.width, dim.height, workerMainVideo, state.mainWidth, state.mainHeight);
+        } else {
+          exportCtx.fillStyle = '#000000';
+          exportCtx.fillRect(0, 0, dim.width, dim.height);
+        }
+
+        // 逐幀壓印字幕 (即時連動編輯後內容)
+        drawSubtitles(exportCtx, currentFrameTime, dim.width, dim.height);
+
+        currentFrame++;
+        const percent = Math.min(100, Math.floor((currentFrame / totalFrames) * 100));
+        exportProgressBar.style.width = `${percent}%`;
+        exportPercentText.textContent = `${percent}%`;
+        exportFrameCounter.textContent = `影格: ${currentFrame} / ${totalFrames}`;
+
+        const nextTargetTime = exportStartTime + (currentFrame * frameIntervalMs);
+        const delay = Math.max(0, nextTargetTime - performance.now());
+        setTimeout(exportLoop, delay);
+      }
+
+      exportLoop();
+
+      async function finishExport() {
+        exportStatusText.innerHTML = '<i class="fa-solid fa-wrench fa-spin text-brand-600 mr-2"></i> 正在執行二進制時長校正 (Duration Fixer)...';
+        
+        if (exportAudioSource) {
+          try { exportAudioSource.stop(); } catch (e) {}
+        }
+        if (exportMainAudioSource) {
+          try { exportMainAudioSource.stop(); } catch (e) {}
+        }
+        if (state.mainType === 'video') {
+          workerMainVideo.pause();
+        }
+
+        recorder.onstop = async () => {
+          const rawBlob = new Blob(recordedChunks, { type: mimeType });
+          let fixedBlob = rawBlob;
+
+          if (mimeType.includes('webm')) {
+            fixedBlob = await fixWebmDuration(rawBlob, targetTotalSeconds);
+          } else if (mimeType.includes('mp4')) {
+            fixedBlob = await fixMp4Duration(rawBlob, targetTotalSeconds);
+          }
+
+          state.exportBlob = fixedBlob;
+          const downloadUrl = URL.createObjectURL(fixedBlob);
+
+          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+          downloadResultBtn.href = downloadUrl;
+          downloadResultBtn.download = `composite_${dim.width}x${dim.height}_${Date.now()}.${ext}`;
+
+          state.isExporting = false;
+          startExportBtn.disabled = false;
+          exportProgressContainer.classList.add('hidden');
+          exportSuccessCard.classList.remove('hidden');
+
+          await releaseWakeLock();
+
+          showToast(`影片合成完成！解析度: ${dim.width}x${dim.height}`, 'success');
+        };
+
+        recorder.stop();
+      }
+    });
+
+    // 成品檢視 Modal
+    previewResultBtn.addEventListener('click', () => {
+      if (!state.exportBlob) return;
+      modalVideoPlayer.src = URL.createObjectURL(state.exportBlob);
+      resultModal.classList.remove('hidden');
+      modalVideoPlayer.play().catch(() => {});
+    });
+
+    function closeResultModal() {
+      resultModal.classList.add('hidden');
+      modalVideoPlayer.pause();
+      modalVideoPlayer.src = '';
+    }
+
+    closeModalBtn.addEventListener('click', closeResultModal);
+    closeModalBtn2.addEventListener('click', closeResultModal);
+    resultModal.addEventListener('click', (e) => {
+      if (e.target === resultModal) closeResultModal();
+    });
+
+    // 初始化設定
+    updateAudioRangeSlice();
+    setupCanvasResolution();
+    renderCurrentFrame(0);
+  </script>
+</body>
+</html>
