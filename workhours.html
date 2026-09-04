@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>加班時數統計表 (支援CSV匯入匯出・多段休息・24小時制)</title>
-  <!-- Tailwind CSS CDN -->
+  <title>加班時數統計表 (即時跨裝置共享・24H制)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     select {
@@ -21,41 +19,37 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen">
   <div class="max-w-5xl mx-auto px-4 py-8">
     
-    <!-- 頂部標題與連線狀態 -->
     <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 mb-6 border-b border-slate-200">
       <div>
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
           <i data-lucide="clock" class="w-8 h-8 text-indigo-600"></i>
           加班時數統計表
-          <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 ml-1">CSV 匯入/匯出版</span>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 ml-1">即時同步版</span>
         </h1>
-        <p class="text-sm text-slate-500 mt-1">即時多人同步 · 支援CSV載入備份 · 多段休息扣除 · 24小時制</p>
+        <p class="text-sm text-slate-500 mt-1">跨裝置即時同步 · 支援多段休息扣除 · 24小時制 · 支援CSV備份</p>
       </div>
       <div class="flex items-center gap-2 text-xs">
-        <span id="sync-indicator" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          連線就緒
+        <span id="sync-indicator" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+          連線準備中...
         </span>
       </div>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <!-- 表單輸入區塊 -->
       <section class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
             <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
             登記工作時數
           </h2>
-          <!-- 今日無加班按鈕 -->
           <button type="button" onclick="recordNoOvertime()" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg flex items-center gap-1 transition shadow-sm" title="將當前人員與日期的加班時數登記為 0 小時">
             <i data-lucide="coffee" class="w-3.5 h-3.5"></i>
             今日無加班
           </button>
         </div>
 
-        <!-- 一鍵套用上次填寫的時間組合 -->
         <div class="mb-4">
           <button type="button" id="applyLastUsedBtn" onclick="applyLastUsedTimes()" class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-800 border border-amber-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-sm">
             <i data-lucide="history" class="w-4 h-4 text-amber-600"></i>
@@ -74,7 +68,6 @@
             <input type="date" id="workDate" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
 
-          <!-- 加班時段區塊 -->
           <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-700">加班時段 (24H)</span>
@@ -104,11 +97,9 @@
               </div>
             </div>
 
-            <!-- 動態渲染常用加班鈕 (依先後排序) -->
             <div class="pt-1 flex flex-wrap items-center gap-1.5 text-[11px]" id="workPresetContainer"></div>
           </div>
 
-          <!-- 休息時段扣除區塊 (支援多段休息) -->
           <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-700">休息時段扣除 (可多選)</span>
@@ -121,13 +112,11 @@
               </div>
             </div>
 
-            <!-- 常用休息快捷鍵 (可重複點擊疊加) -->
             <div class="space-y-1">
               <div class="text-[11px] text-slate-500">點擊下方常用時段可直接疊加：</div>
               <div class="flex flex-wrap items-center gap-1.5 text-[11px]" id="restPresetContainer"></div>
             </div>
 
-            <!-- 動態休息時段列表 -->
             <div id="restIntervalsList" class="space-y-2"></div>
 
             <button type="button" onclick="addRestInterval()" class="w-full py-1.5 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-dashed border-slate-300 rounded-lg text-xs font-medium flex items-center justify-center gap-1 transition">
@@ -141,7 +130,6 @@
             <input type="text" id="note" placeholder="例如：假日機房維護、準時下班" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
 
-          <!-- 即時試算 -->
           <div class="p-3.5 bg-indigo-50/80 border border-indigo-100 rounded-xl flex items-center justify-between">
             <div>
               <div class="text-xs font-bold text-indigo-950 flex items-center gap-1">
@@ -160,10 +148,8 @@
         </form>
       </section>
 
-      <!-- 統計數據與表格清單 -->
       <section class="lg:col-span-2 space-y-6">
         
-        <!-- 數據卡片 -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
             <div class="text-xs text-slate-500 font-medium">總計加班時數</div>
@@ -183,19 +169,16 @@
           </div>
         </div>
 
-        <!-- 數據表格 -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div class="px-5 py-3.5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
               <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
-              全員加班記錄清單 (24H格式・多段休息)
+              全員加班記錄清單 (即時同步)
             </h3>
             <div class="flex flex-wrap items-center gap-2">
               <input type="text" id="searchInput" oninput="renderTable()" placeholder="搜尋姓名或備註..." class="px-2.5 py-1 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32 sm:w-44">
               
-              <!-- 隱藏的檔案輸入框用於載入 CSV -->
               <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVFileSelect(event)">
-              
               <button onclick="triggerCSVUpload()" title="載入外部或備份的 CSV 檔" class="px-2.5 py-1 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg flex items-center gap-1 transition">
                 <i data-lucide="upload" class="w-3.5 h-3.5"></i>
                 載入 CSV
@@ -234,7 +217,6 @@
     </div>
   </div>
 
-  <!-- 常用時間設定 Modal -->
   <div id="presetModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200">
       <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -289,52 +271,48 @@
     </div>
   </div>
 
-  <!-- Toast 提示 -->
   <div id="toast" class="fixed bottom-5 right-5 px-4 py-2.5 rounded-xl shadow-xl bg-slate-900 text-white text-xs font-medium transform translate-y-12 opacity-0 transition-all duration-200 pointer-events-none flex items-center gap-2 z-50">
     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
     <span id="toast-message">操作完成</span>
   </div>
 
-  <!-- Firebase 11 SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInWithCustomToken, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'overtime-csv-sync-app';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-      apiKey: "mock-key",
-      authDomain: "mock.firebaseapp.com",
-      projectId: "mock-project",
-      storageBucket: "mock.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
+    // 專屬 Firebase 設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyB6PJuIGV4fuQadq7Xp5PSH-uZ4x2kpyec",
+      authDomain: "workhours-aaf22.firebaseapp.com",
+      projectId: "workhours-aaf22",
+      storageBucket: "workhours-aaf22.firebasestorage.app",
+      messagingSenderId: "963687453689",
+      appId: "1:963687453689:web:34a8004811d4456f5b6328",
+      measurementId: "G-20E5CCYE41"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
+    let app, auth, db;
     let currentAuthUser = null;
     let isCloudActive = false;
     window.records = [];
 
     async function initAuth() {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          const cred = await signInWithCustomToken(auth, __initial_auth_token);
-          currentAuthUser = cred.user;
-        } else {
-          const cred = await signInAnonymously(auth);
-          currentAuthUser = cred.user;
-        }
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // 匿名驗證：免帳密即可即時存取與同步
+        const cred = await signInAnonymously(auth);
+        currentAuthUser = cred.user;
         isCloudActive = true;
-        updateStatus('即時連線同步中', 'emerald');
+        updateStatus('即時連線同步中 (多人共享)', 'emerald');
         listenToRecords();
       } catch (err) {
-        console.warn('連線回退至本機模式:', err);
+        console.error('Firebase 連線失敗:', err);
         isCloudActive = false;
-        updateStatus('本機模式', 'amber');
+        updateStatus('連線失敗 (本機暫存)', 'rose');
         window.renderTable();
       }
     }
@@ -345,21 +323,27 @@
       if (color === 'emerald') {
         el.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium bg-emerald-50 text-emerald-700 border border-emerald-200';
         el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ${text}`;
-      } else {
+      } else if (color === 'amber') {
         el.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-200';
         el.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> ${text}`;
+      } else {
+        el.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium bg-rose-50 text-rose-700 border border-rose-200';
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> ${text}`;
       }
     }
 
+    // 監聽加班紀錄集合
     function listenToRecords() {
       if (!currentAuthUser) return;
-      const targetCol = collection(db, 'artifacts', appId, 'public', 'data', 'overtime_records');
+      const targetCol = collection(db, 'overtime_records');
       
       onSnapshot(targetCol, (snapshot) => {
         const list = [];
         snapshot.forEach(docSnap => {
           list.push({ id: docSnap.id, ...docSnap.data() });
         });
+        
+        // 依照日期與時間降冪排列
         list.sort((a, b) => {
           const valA = `${a.workDate || ''} ${a.startTime || ''}`;
           const valB = `${b.workDate || ''} ${b.startTime || ''}`;
@@ -367,6 +351,7 @@
         });
         window.records = list;
 
+        // 自動捕捉最近一筆紀錄作為上次常用時段
         const latestWorkRecord = list.find(r => !r.isNoOvertime && r.startTime && r.startTime !== '-');
         if (latestWorkRecord && !window.hasManualLastUsed) {
           const rests = Array.isArray(latestWorkRecord.rests) 
@@ -385,13 +370,14 @@
         window.renderTable();
       }, (err) => {
         console.error('Snapshot 讀取異常:', err);
-        window.showToast('無法取得雲端更新');
+        window.showToast('雲端讀取異常');
       });
     }
 
+    // 新增資料
     window.addRecordToDB = async function(record) {
       if (isCloudActive && currentAuthUser) {
-        const targetCol = collection(db, 'artifacts', appId, 'public', 'data', 'overtime_records');
+        const targetCol = collection(db, 'overtime_records');
         await addDoc(targetCol, {
           ...record,
           createdUserId: currentAuthUser.uid,
@@ -404,14 +390,15 @@
       }
     };
 
+    // 刪除資料
     window.deleteRecordFromDB = async function(id) {
       if (!confirm('確定要刪除此筆紀錄嗎？')) return;
 
       if (isCloudActive && currentAuthUser) {
         try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'overtime_records', id);
+          const docRef = doc(db, 'overtime_records', id);
           await deleteDoc(docRef);
-          window.showToast('已刪除紀錄');
+          window.showToast('已自雲端資料庫刪除');
         } catch (e) {
           window.showToast('刪除失敗');
         }
@@ -425,7 +412,6 @@
     initAuth();
   </script>
 
-  <!-- 核心邏輯、多段休息與 CSV 匯入匯出處理模組 -->
   <script>
     const DEFAULT_WORK_PRESETS = [
       { id: 'w0', label: '08:00~17:00 (早班)', start: '08:00', end: '17:00' },
@@ -844,7 +830,6 @@
       }
     }
 
-    // 常用時間 Modal
     function openPresetModal(type) {
       currentModalType = type;
       const modal = document.getElementById('presetModal');
@@ -934,7 +919,6 @@
       window.showToast('常用項目已移除');
     }
 
-    // 渲染清單表格
     window.renderTable = function() {
       const tbody = document.getElementById('records-tbody');
       const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
@@ -1035,14 +1019,12 @@
       lucide.createIcons();
     };
 
-    // 觸發上傳檔案選擇器
     function triggerCSVUpload() {
       const fileInput = document.getElementById('csvFileInput');
       fileInput.value = '';
       fileInput.click();
     }
 
-    // 解析 CSV 行邏輯 (支援引號與逗號轉義)
     function parseCSVLine(line) {
       const result = [];
       let cur = '';
@@ -1067,7 +1049,6 @@
       return result;
     }
 
-    // 處理上傳並解析 CSV 檔案
     function handleCSVFileSelect(event) {
       const file = event.target.files?.[0];
       if (!file) return;
@@ -1082,15 +1063,11 @@
             return;
           }
 
-          // 標頭檢核
-          const header = parseCSVLine(lines[0]);
           let successCount = 0;
-
           for (let i = 1; i < lines.length; i++) {
             const cols = parseCSVLine(lines[i]);
             if (cols.length < 2) continue;
 
-            // 欄位匹配: 日期(0), 姓名(1), 加班起始(2), 加班結束(3), 休息時段明細(4), 扣除總時數(5), 實計時數(6), 無加班標記(7), 備註(8)
             const workDate = cols[0]?.trim() || '';
             const userName = cols[1]?.trim() || '';
             const startTime = cols[2]?.trim() || '-';
@@ -1098,12 +1075,11 @@
             const restStr = cols[4]?.trim() || '';
             const restDeduct = parseFloat(cols[5]) || 0;
             const netHours = parseFloat(cols[6]) || 0;
-            const isNoOvertime = cols[7]?.trim() === '是' || netHours === 0 && (startTime === '-' || !startTime);
+            const isNoOvertime = cols[7]?.trim() === '是' || (netHours === 0 && (startTime === '-' || !startTime));
             const note = cols[8]?.trim() || '';
 
             if (!workDate || !userName) continue;
 
-            // 解析休息時段 (例如 "12:00-13:00; 18:00-18:30" 或舊版 "12:00~13:00")
             const rests = [];
             if (restStr && restStr !== '-') {
               const segments = restStr.split(/;|；/);
@@ -1145,7 +1121,6 @@
       reader.readAsText(file, 'utf-8');
     }
 
-    // 匯出 CSV
     function exportCSV() {
       const data = window.records || [];
       if (data.length === 0) {
@@ -1164,7 +1139,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `加班統計_多段休息_${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `加班統計_跨裝置同步備份_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
