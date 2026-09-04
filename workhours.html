@@ -39,15 +39,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <section class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex items-center justify-between mb-4">
+        <div class="mb-4">
           <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
             <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
             登記工作時數
           </h2>
-          <button type="button" onclick="recordNoOvertime()" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg flex items-center gap-1 transition shadow-sm" title="將當前人員與日期的加班時數登記為 0 小時">
-            <i data-lucide="coffee" class="w-3.5 h-3.5"></i>
-            今日無加班
-          </button>
         </div>
 
         <div class="mb-4">
@@ -71,10 +67,16 @@
           <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-700">加班時段 (24H)</span>
-              <button type="button" onclick="openPresetModal('work')" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-                <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
-                管理常用
-              </button>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="recordNoOvertime()" class="px-2 py-0.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg flex items-center gap-1 transition shadow-xs" title="將當前人員與日期的加班時數登記為 0 小時">
+                  <i data-lucide="coffee" class="w-3 h-3"></i>
+                  今日無加班
+                </button>
+                <button type="button" onclick="openPresetModal('work')" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+                  <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+                  管理常用
+                </button>
+              </div>
             </div>
             
             <div class="grid grid-cols-2 gap-2">
@@ -281,7 +283,6 @@
     import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    // 專屬 Firebase 設定
     const firebaseConfig = {
       apiKey: "AIzaSyB6PJuIGV4fuQadq7Xp5PSH-uZ4x2kpyec",
       authDomain: "workhours-aaf22.firebaseapp.com",
@@ -303,7 +304,6 @@
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // 匿名驗證：免帳密即可即時存取與同步
         const cred = await signInAnonymously(auth);
         currentAuthUser = cred.user;
         isCloudActive = true;
@@ -332,7 +332,6 @@
       }
     }
 
-    // 監聽加班紀錄集合
     function listenToRecords() {
       if (!currentAuthUser) return;
       const targetCol = collection(db, 'overtime_records');
@@ -343,7 +342,6 @@
           list.push({ id: docSnap.id, ...docSnap.data() });
         });
         
-        // 依照日期與時間降冪排列
         list.sort((a, b) => {
           const valA = `${a.workDate || ''} ${a.startTime || ''}`;
           const valB = `${b.workDate || ''} ${b.startTime || ''}`;
@@ -351,7 +349,6 @@
         });
         window.records = list;
 
-        // 自動捕捉最近一筆紀錄作為上次常用時段
         const latestWorkRecord = list.find(r => !r.isNoOvertime && r.startTime && r.startTime !== '-');
         if (latestWorkRecord && !window.hasManualLastUsed) {
           const rests = Array.isArray(latestWorkRecord.rests) 
@@ -374,7 +371,6 @@
       });
     }
 
-    // 新增資料
     window.addRecordToDB = async function(record) {
       if (isCloudActive && currentAuthUser) {
         const targetCol = collection(db, 'overtime_records');
@@ -390,7 +386,6 @@
       }
     };
 
-    // 刪除資料
     window.deleteRecordFromDB = async function(id) {
       if (!confirm('確定要刪除此筆紀錄嗎？')) return;
 
